@@ -2,10 +2,11 @@ package com.apps.quantitymeasurement;
 
 public class QuantityMeasurementApp {
 
-    // Enum for units
     enum Unit {
         FEET(1.0),
-        INCHES(1.0 / 12);
+        INCHES(1.0 / 12),
+        YARDS(3.0),
+        CENTIMETERS(0.0328084);
 
         private final double factor;
 
@@ -18,7 +19,6 @@ public class QuantityMeasurementApp {
         }
     }
 
-    // Generic Quantity class
     public static class Quantity {
         private final double value;
         private final Unit unit;
@@ -43,9 +43,14 @@ public class QuantityMeasurementApp {
     }
 
     public static void main(String[] args) {
-        Quantity q1 = new Quantity(1.0, Unit.FEET);
-        Quantity q2 = new Quantity(12.0, Unit.INCHES);
 
-        System.out.println("Equal: " + q1.equals(q2));
+        Quantity q1 = new Quantity(1.0, Unit.YARDS);
+        Quantity q2 = new Quantity(3.0, Unit.FEET);
+
+        Quantity q3 = new Quantity(1.0, Unit.CENTIMETERS);
+        Quantity q4 = new Quantity(0.393701, Unit.INCHES);
+
+        System.out.println("Yard to Feet Equal: " + q1.equals(q2));
+        System.out.println("CM to Inch Equal: " + q3.equals(q4));
     }
 }
