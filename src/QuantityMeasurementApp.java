@@ -2,28 +2,77 @@ package com.apps.quantitymeasurement;
 
 public class QuantityMeasurementApp {
 
-    // UC1: Feet class
-    public static class Feet {
-        private final double value;
+    // Enum for units
+    enum LengthUnit {
+        FEET(1.0),
+        INCHES(1.0 / 12.0),
+        YARDS(3.0),
+        CENTIMETERS(1.0 / 30.48);
 
-        public Feet(double value) {
-            this.value = value;
+        private final double factor;
+
+        LengthUnit(double factor) {
+            this.factor = factor;
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (obj == null || getClass() != obj.getClass()) return false;
+        public double toBase(double value) {
+            return value * factor;
+        }
 
-            Feet feet = (Feet) obj;
-            return Double.compare(feet.value, value) == 0;
+        public double fromBase(double baseValue) {
+            return baseValue / factor;
         }
     }
 
-    public static void main(String[] args) {
-        Feet f1 = new Feet(1.0);
-        Feet f2 = new Feet(1.0);
+    // Quantity class
+    public static class QuantityLength {
+        private final double value;
+        private final LengthUnit unit;
 
-        System.out.println("Feet Equal: " + f1.equals(f2));
+        public QuantityLength(double value, LengthUnit unit) {
+            if (unit == null || !Double.isFinite(value)) {
+                throw new IllegalArgumentException("Invalid input");
+            }
+            this.value = value;
+            this.unit = unit;
+        }
+
+        // UC7: Addition with target unit
+        public QuantityLength add(QuantityLength other, LengthUnit targetUnit) {
+
+            if (other == null || targetUnit == null) {
+                throw new IllegalArgumentException("Invalid input");
+            }
+
+            double base1 = this.unit.toBase(this.value);
+            double base2 = other.unit.toBase(other.value);
+
+            double sumBase = base1 + base2;
+
+            double result = targetUnit.fromBase(sumBase);
+
+            return new QuantityLength(result, targetUnit);
+        }
+
+        @Override
+        public String toString() {
+            return value + " " + unit;
+        }
+    }
+
+    // Main method
+    public static void main(String[] args) {
+
+        QuantityLength a = new QuantityLength(1.0, LengthUnit.FEET);
+        QuantityLength b = new QuantityLength(12.0, LengthUnit.INCHES);
+
+        System.out.println("Result in FEET: " +
+                a.add(b, LengthUnit.FEET));
+
+        System.out.println("Result in INCHES: " +
+                a.add(b, LengthUnit.INCHES));
+
+        System.out.println("Result in YARDS: " +
+                a.add(b, LengthUnit.YARDS));
     }
 }
