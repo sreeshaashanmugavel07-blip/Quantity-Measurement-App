@@ -1,86 +1,78 @@
 public class QuantityMeasurementApp {
 
-    // ✅ UC8: LengthUnit handles conversion (refactored responsibility)
-    enum LengthUnit {
-        FEET(1.0),
-        INCHES(1.0 / 12.0),
-        YARDS(3.0),
-        CENTIMETERS(1.0 / 30.48);
+    // ===== ENUM: WeightUnit =====
+    enum WeightUnit {
+        KILOGRAM(1.0),
+        GRAM(0.001),
+        POUND(0.453592);
 
         private final double factor;
 
-        LengthUnit(double factor) {
+        WeightUnit(double factor) {
             this.factor = factor;
         }
 
-        // Convert THIS unit → base (feet)
         public double toBase(double value) {
             return value * factor;
         }
 
-        // Convert base (feet) → THIS unit
         public double fromBase(double baseValue) {
             return baseValue / factor;
         }
     }
 
-    static class QuantityLength {
+    // ===== CLASS: QuantityWeight =====
+    static class QuantityWeight {
         private final double value;
-        private final LengthUnit unit;
+        private final WeightUnit unit;
+        private static final double EPSILON = 1e-6;
 
-        public QuantityLength(double value, LengthUnit unit) {
-            if (unit == null || !Double.isFinite(value)) {
-                throw new IllegalArgumentException("Invalid input");
-            }
+        public QuantityWeight(double value, WeightUnit unit) {
+            if (unit == null) throw new IllegalArgumentException("Unit cannot be null");
+            if (Double.isNaN(value) || Double.isInfinite(value))
+                throw new IllegalArgumentException("Invalid value");
+
             this.value = value;
             this.unit = unit;
         }
 
-        // Existing feature (UC5) — now uses delegation
-        public QuantityLength convertTo(LengthUnit targetUnit) {
-            if (targetUnit == null) {
-                throw new IllegalArgumentException("Invalid target unit");
-            }
-
-            double base = unit.toBase(value);
-            double result = targetUnit.fromBase(base);
-
-            return new QuantityLength(result, targetUnit);
+        private double toBase() {
+            return unit.toBase(value);
         }
 
-        // Existing feature (UC6)
-        public QuantityLength add(QuantityLength other) {
-            return add(other, this.unit);
-        }
-
-        // Existing feature (UC7)
-        public QuantityLength add(QuantityLength other, LengthUnit targetUnit) {
-            if (other == null || targetUnit == null) {
-                throw new IllegalArgumentException("Invalid input");
-            }
-
-            double base1 = this.unit.toBase(this.value);
-            double base2 = other.unit.toBase(other.value);
-
-            double sumBase = base1 + base2;
-
-            double result = targetUnit.fromBase(sumBase);
-
-            return new QuantityLength(result, targetUnit);
-        }
-
-        // Equality (UC4)
+        // ===== EQUALS =====
         @Override
         public boolean equals(Object obj) {
             if (this == obj) return true;
-            if (!(obj instanceof QuantityLength)) return false;
+            if (obj == null || getClass() != obj.getClass()) return false;
 
-            QuantityLength other = (QuantityLength) obj;
+            QuantityWeight other = (QuantityWeight) obj;
+            return Math.abs(this.toBase() - other.toBase()) < EPSILON;
+        }
 
-            double base1 = this.unit.toBase(this.value);
-            double base2 = other.unit.toBase(other.value);
+        // ===== CONVERT =====
+        public QuantityWeight convertTo(WeightUnit targetUnit) {
+            if (targetUnit == null) throw new IllegalArgumentException("Target unit cannot be null");
 
-            return Math.abs(base1 - base2) < 0.0001;
+            double base = this.toBase();
+            double converted = targetUnit.fromBase(base);
+            return new QuantityWeight(converted, targetUnit);
+        }
+
+        // ===== ADD (default unit = this.unit) =====
+        public QuantityWeight add(QuantityWeight other) {
+            return add(other, this.unit);
+        }
+
+        // ===== ADD (explicit unit) =====
+        public QuantityWeight add(QuantityWeight other, WeightUnit targetUnit) {
+            if (other == null || targetUnit == null)
+                throw new IllegalArgumentException("Invalid input");
+
+            double sumBase = this.toBase() + other.toBase();
+            double result = targetUnit.fromBase(sumBase);
+
+            return new QuantityWeight(result, targetUnit);
         }
 
         @Override
@@ -89,15 +81,22 @@ public class QuantityMeasurementApp {
         }
     }
 
+    // ===== MAIN METHOD (TESTING) =====
     public static void main(String[] args) {
 
-        QuantityLength q1 = new QuantityLength(1.0, LengthUnit.FEET);
-        QuantityLength q2 = new QuantityLength(12.0, LengthUnit.INCHES);
+        QuantityWeight w1 = new QuantityWeight(1.0, WeightUnit.KILOGRAM);
+        QuantityWeight w2 = new QuantityWeight(1000.0, WeightUnit.GRAM);
 
-        // Demonstration (all previous UC still working)
-        System.out.println("Convert: " + q1.convertTo(LengthUnit.INCHES));
-        System.out.println("Add: " + q1.add(q2));
-        System.out.println("Add with target YARDS: " + q1.add(q2, LengthUnit.YARDS));
-        System.out.println("Equal? " + q1.equals(q2));
+        // Equality
+        System.out.println("Equal: " + w1.equals(w2)); // true
+
+        // Conversion
+        System.out.println("Convert: " + w1.convertTo(WeightUnit.POUND));
+
+        // Addition (default unit)
+        System.out.println("Add: " + w1.add(w2));
+
+        // Addition (explicit unit)
+        System.out.println("Add in GRAM: " + w1.add(w2, WeightUnit.GRAM));
     }
 }
